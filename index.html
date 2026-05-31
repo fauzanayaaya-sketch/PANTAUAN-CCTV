@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CCTV Jogja Full Frame Pro</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  </head>
+  <body>
+    <main id="app">
+      <section class="command-bar">
+        <div class="brand">
+          <span class="signal-dot"></span>
+          <div>
+            <h1>CCTV JOGJA MONITOR</h1>
+            <p>Full frame surveillance grid · 15 live feeds</p>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="control active" data-layout="grid4">GRID 4</button>
+          <button class="control" data-layout="grid6">GRID 6</button>
+          <button class="control" data-layout="grid9">GRID 9</button>
+          <button class="control" data-layout="compact">COMPACT</button>
+          <button class="control" id="fullscreenBtn">FULLSCREEN</button>
+        </div>
+      </section>
+
+      <section class="filter-row" id="filterRow">
+        <button class="filter active" data-group="all">ALL CCTV</button>
+        <button class="filter" data-group="Per4tan UPN">PER4TAN UPN</button>
+        <button class="filter" data-group="Per3an Selatan UPN">
+          PER3AN SELATAN UPN
+        </button>
+        <button class="filter" data-group="Superindo Seturan">
+          SUPERINDO SETURAN
+        </button>
+        <button class="filter" data-group="Selokan">SELOKAN</button>
+      </section>
+
+      <section class="camera-grid layout-grid4" id="cameraGrid"></section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
