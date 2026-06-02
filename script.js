@@ -95,6 +95,7 @@ const grid = document.getElementById("cameraGrid");
 const hlsInstances = {};
 let autoCaptureTimer = null;
 let autoCaptureEnabled = false;
+let autoCaptureTargetId = null;
 const AUTO_CAPTURE_INTERVAL_MS = 5000; // 5 detik
 const CAPTURE_SCALE = 3; // 3x dari resolusi asli stream supaya hasil download tidak kecil
 const CAPTURE_JPEG_QUALITY = 0.98; // kualitas JPG tinggi
@@ -113,6 +114,7 @@ function renderCameras(list = cameras) {
       <div class="card-actions">
         <button class="mini-btn focus-btn" type="button" title="Focus camera">FOCUS</button>
         <button class="mini-btn capture-btn" type="button" title="Capture 1 frame" data-camera-id="${cam.id}">CAPTURE</button>
+        <button class="mini-btn auto-one-btn" type="button" title="Auto capture kamera ini setiap 5 detik" data-camera-id="${cam.id}">AUTO 5D</button>
       </div>
       <video class="camera-video" id="${cam.id}" autoplay muted controls playsinline crossorigin="anonymous"></video>
       <div class="cam-label">
@@ -138,6 +140,14 @@ function renderCameras(list = cameras) {
       captureFrame(btn.dataset.cameraId);
     });
   });
+
+  document.querySelectorAll(".auto-one-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      toggleAutoCaptureOne(btn.dataset.cameraId);
+    });
+  });
+
+  syncAutoCaptureButtonState();
 }
 
 function loadHlsVideo(videoId, src) {
@@ -198,13 +208,17 @@ function toggleFocus(card) {
   if (!isFocused) {
     card.classList.add("focused");
     document.body.classList.add("focus-mode");
+    showCaptureStatus(`Mode focus aktif: ${getCameraName(card.dataset.id)}. Tombol AUTO 5D di frame ini akan capture kamera ini saja.`);
   }
+
+  syncAutoCaptureButtonState();
 }
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     document.body.classList.remove("focus-mode");
     document.querySelectorAll(".camera-card").forEach((item) => item.classList.remove("focused"));
+    syncAutoCaptureButtonState();
   }
 });
 
@@ -308,11 +322,74 @@ function captureFrame(videoId) {
   }
 }
 
+function getFocusedCameraId() {
+  const focusedCard = document.querySelector(".camera-card.focused");
+  return focusedCard ? focusedCard.dataset.id : null;
+}
+
 function captureVisibleCameras() {
+  const focusedCameraId = getFocusedCameraId();
+
+  if (focusedCameraId) {
+    captureFrame(focusedCameraId);
+    return;
+  }
+
   const videos = document.querySelectorAll(".camera-video");
   videos.forEach((video, index) => {
     setTimeout(() => captureFrame(video.id), index * 700);
   });
+}
+
+function captureAutoTarget() {
+  const targetId = autoCaptureTargetId || getFocusedCameraId();
+
+  if (targetId) {
+    captureFrame(targetId);
+    return;
+  }
+
+  captureVisibleCameras();
+}
+
+function stopAutoCapture(message = "Auto capture dimatikan.") {
+  autoCaptureEnabled = false;
+  autoCaptureTargetId = null;
+  clearInterval(autoCaptureTimer);
+  autoCaptureTimer = null;
+  syncAutoCaptureButtonState();
+  showCaptureStatus(message);
+}
+
+function syncAutoCaptureButtonState() {
+  const globalBtn = document.getElementById("autoCaptureBtn");
+  if (globalBtn) {
+    globalBtn.classList.toggle("active", autoCaptureEnabled);
+    globalBtn.textContent = autoCaptureEnabled
+      ? (autoCaptureTargetId ? "AUTO FOCUS: ON" : "AUTO CAPTURE: ON")
+      : "AUTO CAPTURE: OFF";
+  }
+
+  document.querySelectorAll(".auto-one-btn").forEach((btn) => {
+    const isActive = autoCaptureEnabled && autoCaptureTargetId === btn.dataset.cameraId;
+    btn.classList.toggle("active", isActive);
+    btn.textContent = isActive ? "AUTO ON" : "AUTO 5D";
+  });
+}
+
+function toggleAutoCaptureOne(videoId) {
+  if (autoCaptureEnabled && autoCaptureTargetId === videoId) {
+    stopAutoCapture(`Auto capture untuk ${getCameraName(videoId)} dimatikan.`);
+    return;
+  }
+
+  autoCaptureEnabled = true;
+  autoCaptureTargetId = videoId;
+  clearInterval(autoCaptureTimer);
+  syncAutoCaptureButtonState();
+  showCaptureStatus(`Auto capture fokus aktif: ${getCameraName(videoId)} akan dicapture setiap 5 detik.`);
+  captureFrame(videoId);
+  autoCaptureTimer = setInterval(captureAutoTarget, AUTO_CAPTURE_INTERVAL_MS);
 }
 
 function showCaptureStatus(message) {
@@ -328,21 +405,25 @@ if (captureAllBtn) {
 const autoCaptureBtn = document.getElementById("autoCaptureBtn");
 if (autoCaptureBtn) {
   autoCaptureBtn.addEventListener("click", () => {
-    autoCaptureEnabled = !autoCaptureEnabled;
-
     if (autoCaptureEnabled) {
-      autoCaptureBtn.classList.add("active");
-      autoCaptureBtn.textContent = "AUTO CAPTURE: ON";
-      showCaptureStatus("Auto capture HD aktif: mengambil frame semua CCTV yang tampil setiap 5 detik dengan output 3x lebih besar.");
-      captureVisibleCameras();
-      autoCaptureTimer = setInterval(captureVisibleCameras, AUTO_CAPTURE_INTERVAL_MS);
-    } else {
-      autoCaptureBtn.classList.remove("active");
-      autoCaptureBtn.textContent = "AUTO CAPTURE: OFF";
-      showCaptureStatus("Auto capture dimatikan.");
-      clearInterval(autoCaptureTimer);
-      autoCaptureTimer = null;
+      stopAutoCapture();
+      return;
     }
+
+    const focusedCameraId = getFocusedCameraId();
+    autoCaptureEnabled = true;
+    autoCaptureTargetId = focusedCameraId || null;
+    clearInterval(autoCaptureTimer);
+    syncAutoCaptureButtonState();
+
+    if (focusedCameraId) {
+      showCaptureStatus(`Auto capture fokus aktif: hanya ${getCameraName(focusedCameraId)} yang dicapture setiap 5 detik.`);
+    } else {
+      showCaptureStatus("Auto capture HD aktif: belum ada frame focus, jadi semua CCTV yang tampil akan dicapture setiap 5 detik.");
+    }
+
+    captureAutoTarget();
+    autoCaptureTimer = setInterval(captureAutoTarget, AUTO_CAPTURE_INTERVAL_MS);
   });
 }
 
