@@ -261,24 +261,22 @@ body::after{
 }
 
 .focus-btn{
-  position:absolute;
-  top:10px;
-  right:10px;
-  z-index:5;
-  border:1px solid rgba(0,255,170,.20);
-  background:rgba(0,0,0,.58);
-  color:var(--text);
-  border-radius:999px;
-  padding:7px 10px;
-  cursor:pointer;
-  font-weight:800;
-  font-size:10px;
-  letter-spacing:.08em;
-  backdrop-filter:blur(8px);
+  border-color:rgba(0,255,170,.20);
 }
 
 .focus-btn:hover{
   background:rgba(0,255,170,.16);
+}
+
+.auto-one-btn{
+  border-color:rgba(0,183,255,.28);
+}
+
+.auto-one-btn.active,
+.mini-btn.active{
+  border-color:rgba(0,255,170,.75);
+  background:rgba(0,255,170,.22);
+  box-shadow:0 0 18px rgba(0,255,170,.18);
 }
 
 /* MODE FOCUS FULLSCREEN PER CAMERA */
@@ -311,9 +309,14 @@ body.focus-mode .camera-card.focused .cam-label{
   bottom:18px;
 }
 
-body.focus-mode .camera-card.focused .focus-btn{
+body.focus-mode .camera-card.focused .card-actions{
   right:18px;
   top:18px;
+}
+
+body.focus-mode .camera-card.focused .mini-btn{
+  padding:9px 12px;
+  font-size:11px;
 }
 
 body.focus-mode .camera-card.focused .focus-btn::after{
