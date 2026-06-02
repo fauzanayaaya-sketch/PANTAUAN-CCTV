@@ -410,6 +410,7 @@ if (autoCaptureBtn) {
       return;
     }
 
+    
     const focusedCameraId = getFocusedCameraId();
     autoCaptureEnabled = true;
     autoCaptureTargetId = focusedCameraId || null;
